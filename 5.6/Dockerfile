@@ -2,16 +2,16 @@ FROM php:5.6.34-fpm
 MAINTAINER Liam Hiscock
 
 # Install the PHP extensions we need
-RUN apt-get update && apt-get install -y libpng-dev libjpeg-dev libpq-dev libldap2-dev mysql-client libmemcached-dev \
-    && rm -rf /var/lib/apt/lists/* \
+RUN apt-get update && apt-get install -y libpng-dev libjpeg-dev libpq-dev libldap2-dev mysql-client\
     && docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \
     && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \
     && docker-php-ext-install gd mbstring opcache pdo pdo_mysql pdo_pgsql zip ldap
 
 # Install Memcached
-RUN pecl install memcached && \
-    docker-php-ext-enable memcached
-
+RUN apt-get -y install libz-dev libmemcached-dev libmemcached11 libmemcachedutil2 build-essential \
+    && pecl install memcached-2.2.0 \
+    && echo extension=memcached.so >> /usr/local/etc/php/conf.d/memcached.ini \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set recommended PHP.ini settings
 # See https://secure.php.net/manual/en/opcache.installation.php

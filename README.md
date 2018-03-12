@@ -1,2 +1,2 @@
-# php
-Docker php image
+# php-fpm
+Docker php-fpm image

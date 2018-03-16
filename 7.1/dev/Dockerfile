@@ -1,4 +1,4 @@
-FROM php:5.6.34-fpm
+FROM php:7.1
 MAINTAINER Liam Hiscock
 
 # Install the PHP extensions we need
@@ -7,11 +7,12 @@ RUN apt-get update && apt-get install -y libpng-dev libjpeg-dev libpq-dev liblda
     && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \
     && docker-php-ext-install gd mbstring opcache pdo pdo_mysql pdo_pgsql zip ldap
 
-# Install Memcached
-RUN apt-get -y install libz-dev libmemcached-dev libmemcached11 libmemcachedutil2 build-essential \
-    && pecl install memcached-2.2.0 \
-    && echo extension=memcached.so >> /usr/local/etc/php/conf.d/memcached.ini \
-    && rm -rf /var/lib/apt/lists/*
+# Install version specific plugins.
+ADD install.sh install.sh
+RUN chmod +x install.sh && sh ./install.sh && rm install.sh
+
+# Project cleanup.
+RUN rm -rf /var/lib/apt/lists/*
 
 # Set recommended PHP.ini settings
 # See https://secure.php.net/manual/en/opcache.installation.php
@@ -22,7 +23,21 @@ RUN { \
         echo 'opcache.revalidate_freq=60'; \
         echo 'opcache.fast_shutdown=1'; \
         echo 'opcache.enable_cli=1'; \
+        echo 'opcache.enable=1'; \
     } > /usr/local/etc/php/conf.d/opcache-recommended.ini
+
+RUN { \
+        echo 'max_file_uploads = 100'; \
+        echo 'upload_max_filesize = 256M'; \
+        echo 'post_max_size = 256M'; \
+        echo 'memory_limit = 256M'; \
+        echo 'xdebug.remote_enable = ${XDEBUG_ENABLE}'; \
+        echo 'xdebug.remote_connect_back = ${XDEBUG_REMOTE_CONNECT_BACK}'; \
+        echo 'xdebug.remote_host = ${XDEBUG_HOST}'; \
+        echo 'xdebug.remote_port = ${XDEBUG_PORT}'; \
+        echo 'xdebug.remote_handler = dbgp'; \
+        echo 'xdebug.max_nesting_level = 256'; \
+    } > /usr/local/etc/php/conf.d/x-config.ini
 
 WORKDIR /var/www/html
 
